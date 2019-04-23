@@ -31,8 +31,7 @@ def get_base_env(env):
 
 def is_atari_game(env):
     """ Verify whether game uses the Arcade Learning Environment """
-    env = get_base_env(env)
-    return hasattr(env, 'ale')
+    return hasattr(get_base_env(env), 'ale')
 
 
 def make_game(game):
@@ -51,10 +50,9 @@ def make_game(game):
         env = env.env
 
     if is_atari_game(env):
-        env = prepare_atari_env(env)
+        return prepare_atari_env(env)
     else:
-        env = prepare_control_env(env, game, modify)
-    return env
+        return prepare_control_env(env, game, modify)
 
 
 def prepare_control_env(env, game, modify):
@@ -71,7 +69,8 @@ def prepare_control_env(env, game, modify):
         env = ScaleRewardWrapper(env)
 
     if 'CartPole' in game:
-        env.observation_space = gym.spaces.Box(np.array([-4.8, -10, -4.8, -10]), np.array([4.8, 10, 4.8, 10]))
+        env.observation_space = gym.spaces.Box(np.array([-4.8, -10, -4.8, -10]),
+                                               np.array([4.8, 10, 4.8, 10]))
     return env
 
 
