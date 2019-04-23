@@ -27,6 +27,7 @@ class Model:
 
         # Placeholders
         if not self.state_discrete:
+            # wtf? why have both `x` and `self.x`
             self.x = x = tf.placeholder("float32", shape=np.append(None, self.state_dim), name='x')  # state
         else:
             self.x = x = tf.placeholder("int32", shape=np.append(None, 1))  # state
@@ -65,17 +66,18 @@ class Model:
 
 
 def agent(game: str, n_ep: int, n_mcts: int, max_ep_len: int, lr: float, c: float, gamma: float, data_size: int,
-          batch_size: int, temp: float, n_hidden_layers: int, n_hidden_units: int):
+          batch_size: int, temp: float, n_hidden_layers: int, n_hidden_units: int, replay_epochs=1):
     """ Outer training loop """
     # tf.reset_default_graph()
     episode_returns = []  # storage
     timepoints = []
+
     # Environments
     Env = make_game(game)
     is_atari = is_atari_game(Env)
     mcts_env = make_game(game) if is_atari else None
 
-    D = Database(max_size=data_size, batch_size=batch_size)
+    db = Database(max_size=data_size, batch_size=batch_size)
     model = Model(Env=Env, lr=lr, n_hidden_layers=n_hidden_layers, n_hidden_units=n_hidden_units)
     t_total = 0  # total steps
     R_best = -np.Inf
@@ -100,7 +102,7 @@ def agent(game: str, n_ep: int, n_mcts: int, max_ep_len: int, lr: float, c: floa
                 # MCTS step
                 mcts.search(n_mcts=n_mcts, c=c, Env=Env, mcts_env=mcts_env)
                 state, pi, V = mcts.return_results(temp)  # extract the root output
-                D.store((state, V, pi))
+                db.store((state, V, pi))
 
                 # Make the true step
                 a = np.random.choice(len(pi), p=pi)
@@ -127,11 +129,10 @@ def agent(game: str, n_ep: int, n_mcts: int, max_ep_len: int, lr: float, c: floa
             total_time = np.round((time.time() - start), 1)
             print(f'Finished episode {ep}, total return: {np.round(R, 2)}, total time: {total_time} sec')
 
-            # Train
-            D.reshuffle()
-            # WTF? range(1)?
-            for epoch in range(1):
-                for sb, Vb, pib in D:
+            # Train using replay
+            db.reshuffle()
+            for epoch in range(replay_epochs):
+                for sb, Vb, pib in db:
                     model.train(sb, Vb, pib)
 
     # Return results
@@ -172,7 +173,7 @@ if __name__ == '__main__':
     ax.plot(symmetric_remove(np.arange(total_eps), args.window - 1), episode_returns, linewidth=4, color='darkred')
     ax.set_ylabel('Return')
     ax.set_xlabel('Episode', color='darkred')
-    plt.savefig(os.getcwd() + '/learning_curve.png', bbox_inches="tight", dpi=300)
+    plt.savefig(os.path.join(os.getcwd(), 'learning_curve.png'), bbox_inches="tight", dpi=300)
 
 #    print('Showing best episode with return {}'.format(R_best))
 #    Env = make_game(args.game)

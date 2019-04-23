@@ -6,13 +6,13 @@ import numpy as np
 from gym import spaces
 
 
-def stable_normalizer(x, temp):
+def stable_normalizer(x: np.ndarray, temp: float) -> np.ndarray:
     """ Computes x[i]**temp/sum_i(x[i]**temp)  """
     x = (x / np.max(x)) ** temp
     return np.abs(x / np.sum(x))
 
 
-def argmax(x: np.ndarray):
+def argmax(x: np.ndarray) -> float:
     """ assumes a 1D vector x  """
     x = x.flatten()
     if np.any(np.isnan(x)):
@@ -23,6 +23,7 @@ def argmax(x: np.ndarray):
     except Exception as e:
         print("Argmax error", e)
         winner = np.argmax(x)  # numerical instability ?
+
     return winner
 
 
@@ -40,13 +41,15 @@ def check_space(space):
     return dim, discrete
 
 
-def store_safely(folder, name, to_store):
-    """ to prevent losing information due to interruption of proces    """
-    new_name = folder + name + '.npy'
-    old_name = folder + name + '_old.npy'
+def store_safely(folder: str, name: str, to_store):
+    """ to prevent losing information due to interruption of process """
+    new_name = os.path.join(folder, f'{name}.npy')
+    old_name = os.path.join(folder, f'{name}_old.npy')
+
     if os.path.exists(new_name):
         copyfile(new_name, old_name)
     np.save(new_name, to_store)
+
     if os.path.exists(old_name):
         os.remove(old_name)
 

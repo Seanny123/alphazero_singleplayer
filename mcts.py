@@ -27,7 +27,7 @@ class Action:
 
 class State:
 
-    def __init__(self, index, r, terminal, parent_action, na, model):
+    def __init__(self, index, r: float, terminal: bool, parent_action, na: int, model):
         self.index = index  # state
         self.r = r  # reward upon arriving in this state
         self.terminal = terminal  # whether the domain terminated in this state
@@ -67,7 +67,7 @@ class MCTS:
         self.na = na
         self.gamma = gamma
 
-    def search(self, n_mcts, c, Env, mcts_env):
+    def search(self, n_mcts: int, c: float, Env, mcts_env):
         """ Perform the MCTS search from the root """
         if self.root is None:
             self.root = State(self.root_index, r=0.0, terminal=False,
